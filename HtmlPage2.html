@@ -1,0 +1,33 @@
+﻿<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+    <title></title>
+        <script src="http://libs.baidu.com/jquery/2.0.0/jquery.min.js"></script>
+
+    <script>
+
+       function er(){
+           var formData = new FormData();
+           formData.append('file', $('#file')[0].files);
+           $.ajax({
+               url: 'd1.aspx',
+               type: 'POST',
+               cache: false,
+               data: formData,
+               processData: false,
+               contentType:false,
+               timeout:3600000,
+           }).done(function(re){}).fail(function (r){});
+        }
+
+    </script>
+
+</head>
+<body>
+    <div id="up">
+        <input id="file" type="file"  multiple="multiple"/>
+        <button id="upload" type="button" onclick="er()">upload</button>
+    </div>
+</body>
+</html>
