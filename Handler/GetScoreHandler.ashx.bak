@@ -1,0 +1,154 @@
+﻿<%@ WebHandler Language="C#" Class="GetScoreHandler" %>
+
+using System;
+using System.Web;
+using System.Net;
+using System.IO;
+using Newtonsoft.Json.Linq;
+using System.Text;
+using System.Text.RegularExpressions;
+using System.Configuration;
+using MongoDB.Bson;
+using MongoDB.Driver;
+using MongoDB.Driver.Builders;
+public class GetScoreHandler : IHttpHandler,System.Web.SessionState.IRequiresSessionState{
+    
+    public void ProcessRequest (HttpContext context) {
+        if (!String.IsNullOrEmpty(context.Request.QueryString["key"]))
+        {
+            String key = context.Request.QueryString["key"];
+            MongoServer server = MongoServer.Create(ConfigurationManager.AppSettings["dbserver"]);
+            MongoDatabase mydb = server.GetDatabase("centerdb");
+            MongoCollection mco = mydb.GetCollection("students");
+
+            if (isNumberic(key))
+            { 
+                if (key.Length == 9)
+                {
+                    var q = Query.EQ("ID", key);
+                    MongoCursor mc;
+                    mc = mco.FindAs<IN>(q);
+                    
+                    if (mc.Size()!=0)
+                    {
+                        string s = parseJson(mc);
+                        context.Response.Clear();
+                        context.Response.Write(s);
+                    }
+                    else
+                    {
+                        context.Response.Clear();
+                        context.Response.Write("error");
+                    }
+                }
+                else if (key.Length == 7)
+                {
+                    var q = Query.Matches("ID", key + "+");
+                    MongoCursor mc;
+                    mc = mco.FindAs<IN>(q);
+                    if (mc.Size() != 0)
+                    {
+                        
+                        context.Response.Clear();
+                        context.Response.Write(parseJson(mc));
+                    }
+                    else
+                    {
+                        context.Response.Clear();
+                        context.Response.Write("error");
+                    }
+                }
+                else
+                {
+                    context.Response.Clear();
+                    context.Response.Write("error");
+                }
+            }
+            else
+            {
+                var q = Query.EQ("name", key);
+                MongoCursor mc;
+                mc = mco.FindAs<IN>(q);
+                if (mc.Size() != 0)
+                {
+                    
+                    context.Response.Clear();
+                    context.Response.Write(parseJson(mc));
+                }
+                else
+                {
+                    context.Response.Clear();
+                    context.Response.Write("error");
+                }
+            }
+            server.Disconnect();
+
+            context.Response.End();
+        }
+        else { 
+        }
+        
+        
+    }
+
+    static string parseJson(MongoCursor mc) {
+
+        JArray ja = new JArray();
+        foreach (IN i in mc)
+        {
+            string info = i.info;
+            string name = i.name;
+            string id = i.ID;
+            Boolean haveImg = (Boolean)i.haveImg;
+            info = info.Substring(0, info.IndexOf("获得学位") - 74);
+            Regex r = new Regex("http:.*?\"");
+            if (haveImg)
+            {
+                info = r.Replace(info, "./StudentsPhoto/" + id + ".jpg\"");
+            }
+            else
+            {
+                info = r.Replace(info, "./StudentsPhoto/none.jpg\"");
+            }
+            JObject jo = new JObject();
+            jo.Add(new JProperty("id", id));
+            jo.Add(new JProperty("info", info));
+            ja.Add(jo);
+            
+        }
+        return ja.ToString();
+        
+        
+    }
+    
+    static bool isNumberic(string message)
+    {
+        
+        try
+        {
+            Convert.ToInt32(message);
+            return true;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+   
+    
+    public bool IsReusable {
+        get {
+            return false;
+        }
+    }
+
+}
+
+class IN
+{
+    public ObjectId _id;//BsonType.ObjectId 这个对应了 MongoDB.Bson.ObjectId
+    public string ID { set; get; }
+    public string name { set; get; }
+    public string info { set; get; }
+    public BsonBoolean haveImg { set; get; }
+}

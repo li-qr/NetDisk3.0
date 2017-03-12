@@ -1,4 +1,0 @@
-netsh interface ip set address "WLAN" dhcp
-netsh interface ip set dns "WLAN" dhcp
-netsh interface ip set address "YITAI" static 0.0.0.0 255.255.255.0 0.0.0.0 1
-netsh interface ip set dns "YITAI" static 0.0.0.0 primary

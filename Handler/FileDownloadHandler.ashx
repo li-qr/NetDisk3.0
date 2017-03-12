@@ -18,10 +18,13 @@ public class FileDownloadHandler : IHttpHandler,System.Web.SessionState.IRequire
             {
                 MongoServer server = MongoServer.Create(ConfigurationManager.AppSettings["dbserver"]);
                 MongoDatabase mydb = server.GetDatabase("centerdb");                
-                MongoCollection mco = mydb.GetCollection("uploadedinfo");
-                System.Net.IPAddress ip = System.Net.IPAddress.Parse(context.Request.UserHostAddress);      //根据目标ip地址的获取ip对象
-                System.Net.IPHostEntry ihe = System.Net.Dns.GetHostEntry(ip);
+                MongoCollection mco = mydb.GetCollection("filesinfo");
+                //System.Net.IPAddress ip = System.Net.IPAddress.Parse(context.Request.UserHostAddress);      //根据目标ip地址的获取ip对象
+               // System.Net.IPHostEntry ihe = System.Net.Dns.GetHostEntry(ip);
                 string downfilemd5 =context.Request.QueryString["downmd5s"];
+                MongoGridFSSettings fsSetting = new MongoGridFSSettings() { Root = "file" };
+                //通过文件名去数据库查值
+                MongoGridFS fs = new MongoGridFS(mydb, fsSetting);
                 //方法一，很简洁
                 MemoryStream iee = new MemoryStream();
                 using (ZipOutputStream s = new ZipOutputStream(iee))
@@ -32,19 +35,18 @@ public class FileDownloadHandler : IHttpHandler,System.Web.SessionState.IRequire
                         string[] temp = downfilemd5.Split('|');
                         for (int t = 0; t < temp.Length ; t++)
                         {
-                            // MongoGridFSFileInfo gfInfo = new MongoGridFSFileInfo(fs, temp[t]);
-                           // MemoryStream ie = new MemoryStream();
-                            var query = Query.EQ("MD5", temp[t]);
-                           FileSave.SaveInfo info= mco.FindOneAs<FileSave.SaveInfo>(query);
-                            //fs.Download(ie, query);
-                           FileStream fs =new FileStream(info.savePath,FileMode.Open);
-                           byte[] buff = new byte[fs.Length];
-                           fs.Read(buff, 0, buff.Length);
-                           fs.Close();
-                            ZipEntry entry = new ZipEntry(info.originName);
-                            entry.DateTime = DateTime.Now;
-                            s.PutNextEntry(entry);
-                            s.Write(buff, 0, buff.Length);
+                            if (temp[t] != "")
+                            {
+                                MemoryStream ie = new MemoryStream();
+                                var queryFile = Query.EQ("filename", temp[t]);
+                                fs.Download(ie, queryFile);
+                                var queryInfo = Query.EQ("saveName", temp[t]);
+                                FileSave.SaveInfo info = mco.FindOneAs<FileSave.SaveInfo>(queryInfo);
+                                ZipEntry entry = new ZipEntry(info.originName);
+                                entry.DateTime = DateTime.Now;
+                                s.PutNextEntry(entry);
+                                s.Write(ie.GetBuffer(), 0, (int)ie.Length);
+                            }
                         }
                     
                     

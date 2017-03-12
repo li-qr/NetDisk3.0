@@ -22,7 +22,7 @@ public class get_table_item : IHttpHandler, System.Web.SessionState.IRequiresSes
                 MongoDatabase mydb = server.GetDatabase("centerdb");
                 // MongoGridFSSettings fsSetting = new MongoGridFSSettings() { Root = "file" };
                 //MongoGridFS fs = new MongoGridFS(mydb, fsSetting);
-                MongoCollection mco = mydb.GetCollection("uploadedinfo");
+                MongoCollection mco = mydb.GetCollection("filesinfo");
                 DataTable dt = new DataTable();
                 dt.Columns.AddRange(new DataColumn[4] { new DataColumn("filename", typeof(string)), new DataColumn("size", typeof(string)), new DataColumn("retime", typeof(string)), new DataColumn("id", typeof(string)) });
                
@@ -60,7 +60,7 @@ public class get_table_item : IHttpHandler, System.Web.SessionState.IRequiresSes
                                 string[] sizes = { "B", "KB", "MB", "GB" };
                                 int order = 0;
                                 while (len > 1024 && order + 1 < sizes.Length) { order++; len = len / 1024; }
-                                dt.Rows.Add(fileinfo.originName, String.Format("{0:F}", len) + sizes[order], fileinfo.uploadDate.AsDateTime, fileinfo.MD5);
+                                dt.Rows.Add(fileinfo.originName, String.Format("{0:F}", len) + sizes[order], fileinfo.uploadDate.AsDateTime, fileinfo.saveName);
                             }
                             flag = 1;
                         }
@@ -72,7 +72,7 @@ public class get_table_item : IHttpHandler, System.Web.SessionState.IRequiresSes
                         string[] sizes = { "B", "KB", "MB", "GB" };
                         int order = 0;
                         while (len > 1024 && order + 1 < sizes.Length) { order++; len = len / 1024; }
-                        dt.Rows.Add(fileinfo.originName, String.Format("{0:F}", len) + sizes[order], fileinfo.uploadDate.AsDateTime, fileinfo.MD5);
+                        dt.Rows.Add(fileinfo.originName, String.Format("{0:F}", len) + sizes[order], fileinfo.uploadDate.AsDateTime, fileinfo.saveName);
                     }
 
                 }
